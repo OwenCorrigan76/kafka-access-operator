@@ -8,5 +8,5 @@ metadata:
 spec:
   kafka:
     name: my-cluster
-    namespace: kafka
+    namespace: myproject
     listener: plain
