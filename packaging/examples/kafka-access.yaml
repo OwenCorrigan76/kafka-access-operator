@@ -10,3 +10,4 @@ spec:
     name: my-cluster
     namespace: myproject
     listener: plain
+  secretName: owen
