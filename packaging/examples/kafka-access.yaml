@@ -8,6 +8,5 @@ metadata:
 spec:
   kafka:
     name: my-cluster
-    namespace: myproject
+    namespace: kafka
     listener: plain
-  secretName: owen
