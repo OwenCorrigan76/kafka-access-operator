@@ -107,16 +107,6 @@ public class SecretDependentResource {
         return new KafkaUserData(kafkaUser).withSecret(kafkaUserSecret).getConnectionSecretData();
     }
 
-//    private Map<String, String> getKafkaCaCertData(final Context<KafkaAccess> context, String kafkaClusterName, String kafkaClusterNamespace) {
-//        final String caCertSecretName = KafkaResources.clusterCaCertificateSecretName(kafkaClusterName);
-//        return context.getSecondaryResource(Secret.class)
-//                .filter()
-//        final InformerEventSourceConfiguration<Secret> strimziSecretEventSource = (InformerEventSource<Secret, KafkaAccess>) context.eventSourceRetriever()
-//                .getResourceEventSourceFor(Secret.class, KafkaAccessReconciler.STRIMZI_SECRET_EVENT_SOURCE);
-//        return strimziSecretEventSource.get(new ResourceID(caCertSecretName, kafkaClusterNamespace))
-//                .map(Secret::getData)
-//                .orElse(Map.of());
-//    }
     private Map<String, String> getKafkaCaCertData(final Context<KafkaAccess> context, String kafkaClusterName) {
         final String caCertSecretName = KafkaResources.clusterCaCertificateSecretName(kafkaClusterName);
         return context.getSecondaryResource(Secret.class)
