@@ -6,8 +6,6 @@ package io.strimzi.kafka.access;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.user.KafkaUser;
@@ -93,7 +91,7 @@ public class SecretDependentResource {
             throw e;
         }
         if (listener.isTls()) {
-            listener.withCaCertSecret(getKafkaCaCertData(context, kafkaClusterName, kafkaClusterNamespace));
+            data.putAll(getKafkaCaCertData(context, kafkaClusterName));
         }
         data.putAll(listener.getConnectionSecretData());
         return data;
@@ -103,18 +101,16 @@ public class SecretDependentResource {
         final String userSecretName = Optional.ofNullable(kafkaUser.getStatus())
                 .map(KafkaUserStatus::getSecret)
                 .orElseThrow(missingKubernetesResourceException("Secret in KafkaUser status", kafkaUserNamespace, kafkaUserName));
-        final InformerEventSource<Secret, KafkaAccess> kafkaUserSecretEventSource = (InformerEventSource<Secret, KafkaAccess>) context.eventSourceRetriever()
-                .getResourceEventSourceFor(Secret.class, KafkaAccessReconciler.KAFKA_USER_SECRET_EVENT_SOURCE);
-        final Secret kafkaUserSecret = kafkaUserSecretEventSource.get(new ResourceID(userSecretName, kafkaUserNamespace))
+        // Get the secret directly from the Context of type KafkaAccess.
+        final Secret kafkaUserSecret = context.getSecondaryResource(Secret.class, KafkaAccessReconciler.STRIMZI_SECRET_EVENT_SOURCE)
                 .orElseThrow(missingKubernetesResourceException(String.format("Secret %s for KafkaUser", userSecretName), kafkaUserNamespace, kafkaUserName));
         return new KafkaUserData(kafkaUser).withSecret(kafkaUserSecret).getConnectionSecretData();
     }
 
-    private Map<String, String> getKafkaCaCertData(final Context<KafkaAccess> context, String kafkaClusterName, String kafkaClusterNamespace) {
+    private Map<String, String> getKafkaCaCertData(final Context<KafkaAccess> context, String kafkaClusterName) {
         final String caCertSecretName = KafkaResources.clusterCaCertificateSecretName(kafkaClusterName);
-        final InformerEventSource<Secret, KafkaAccess> strimziSecretEventSource = (InformerEventSource<Secret, KafkaAccess>) context.eventSourceRetriever()
-                .getResourceEventSourceFor(Secret.class, KafkaAccessReconciler.STRIMZI_SECRET_EVENT_SOURCE);
-        return strimziSecretEventSource.get(new ResourceID(caCertSecretName, kafkaClusterNamespace))
+        return context.getSecondaryResource(Secret.class, KafkaAccessReconciler.STRIMZI_SECRET_EVENT_SOURCE)
+                .filter(secret -> caCertSecretName.equals(secret.getMetadata().getName()))
                 .map(Secret::getData)
                 .orElse(Map.of());
     }
