@@ -71,7 +71,8 @@ public class KafkaAccessReconcilerTest {
 
     @BeforeEach
     void beforeEach() {
-        operator = new Operator(overrider -> overrider.withKubernetesClient(client));
+        operator = new Operator(overrider -> overrider.withKubernetesClient(client)
+                .withUseSSAToPatchPrimaryResource(false)); // SSA doesn't work well with the mock k8s client
         operator.register(new KafkaAccessReconciler(operator.getKubernetesClient()));
         operator.start();
     }
